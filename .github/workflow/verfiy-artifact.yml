@@ -1,0 +1,77 @@
+name: "Verify and Read Artifact"
+description: "Downloads a GitHub Actions artifact and verifies its existence"
+
+inputs:
+  artifact-name:
+    description: "Name of the artifact to download"
+    required: true
+
+  path:
+    description: "Target path to download the artifact to"
+    required: false
+    default: "artifact"
+
+  required:
+    description: "Whether the artifact is required (true/false)"
+    required: false
+    default: "true"
+
+  expected-file:
+    description: "Specific file expected inside the artifact (optional)"
+    required: false
+    default: ""
+
+outputs:
+  artifact-path:
+    description: "Resolved artifact path"
+    value: ${{ steps.set-output.outputs.artifact-path }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ inputs.path }}
+
+    - name: Verify artifact
+      shell: bash
+      run: |
+        set -e
+
+        ARTIFACT_PATH="${{ inputs.path }}"
+        EXPECTED_FILE="${{ inputs.expected-file }}"
+        REQUIRED="${{ inputs.required }}"
+
+        fail() {
+          if [ "$REQUIRED" = "true" ]; then
+            echo "::error::$1"
+            exit 1
+          else
+            echo "::warning::$1"
+          fi
+        }
+
+        if [ ! -d "$ARTIFACT_PATH" ]; then
+          fail "Artifact directory does not exist: $ARTIFACT_PATH"
+          exit 0
+        fi
+
+        if [ -z "$(ls -A "$ARTIFACT_PATH" 2>/dev/null)" ]; then
+          fail "Artifact directory is empty: $ARTIFACT_PATH"
+          exit 0
+        fi
+
+        if [ -n "$EXPECTED_FILE" ] && [ ! -f "$ARTIFACT_PATH/$EXPECTED_FILE" ]; then
+          fail "Expected file not found: $ARTIFACT_PATH/$EXPECTED_FILE"
+          exit 0
+        fi
+
+        echo "Artifact verified successfully."
+
+    - name: Set output
+      id: set-output
+      shell: bash
+      run: |
+        echo "artifact-path=${{ inputs.path }}" >> "$GITHUB_OUTPUT"
