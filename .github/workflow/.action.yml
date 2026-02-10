@@ -1,19 +1,17 @@
 name: Artificat_Composition
-on:
-  workflow_dispatch:
 
 jobs:
-consumer:
-  runs-on: ubuntu-latest
-  needs: producer
-
-  steps:
-    - uses: ./.github/actions/verify-artifact
-      with:
-        artifact-name: shared-file
-        path: downloaded
-        expected-file: message.txt
-        required: true
-
-    - name: Read file
-      run: cat downloaded/message.txt
+  consumer:
+    runs-on: ubuntu-latest
+    needs: producer # name of the job to upload
+  
+    steps:
+      - uses: ./.github/actions/verify-artifact
+        with:
+          artifact-name: shared-file
+          path: downloaded
+          expected-file: message.txt
+          required: true
+  
+      - name: Read file
+        run: cat downloaded/message.txt
