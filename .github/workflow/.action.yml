@@ -6,7 +6,7 @@ jobs:
     needs: producer # name of the job to upload
   
     steps:
-      - uses: ./.github/actions/verify-artifact
+      - uses: ./verify-artifact
         with:
           artifact-name: shared-file
           path: downloaded
